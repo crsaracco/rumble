@@ -6,12 +6,26 @@ extern crate prost_derive;
 extern crate crossbeam;
 
 mod network;
+mod message;
+
+use message::MumbleMessage;
 
 fn main() {
     /*
     println!("Proto location: {}", concat!(env!("OUT_DIR"), "/mumble_proto.rs"));
     */
 
+    let version1 = message::mumble::Version::default();
+    println!("{:?}", version1);
+
+    let version2 = version1.as_any();
+    println!("{:?}", version2);
+
+    if let message::mumble::Version(x) = version2 {
+        println!("version!")
+    }
+
+    /*
     let mut net = network::Network::new();
 
     let mut version_message = network::mumble::Version::default();
@@ -31,4 +45,5 @@ fn main() {
             println!("{:?}", message);
         }
     }
+    */
 }
