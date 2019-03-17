@@ -1,6 +1,6 @@
 use super::mumble;
 use prost::Message;
-use crate::sasayaku_error::SasayakuError;
+use crate::rumble_error::RumbleError;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -64,7 +64,7 @@ pub fn to_bytes(message: MumbleMessage) -> Vec<u8> {
     }
 }
 
-pub fn from_bytes(bytes: Vec<u8>) -> Result<MumbleMessage, SasayakuError> {
+pub fn from_bytes(bytes: Vec<u8>) -> Result<MumbleMessage, RumbleError> {
     let message_id = bytes[1];
     let payload = &bytes[6..];
     match message_id {
@@ -94,7 +94,7 @@ pub fn from_bytes(bytes: Vec<u8>) -> Result<MumbleMessage, SasayakuError> {
         23 => Ok(MumbleMessage::RequestBlob(mumble::RequestBlob::decode(payload)?)),
         24 => Ok(MumbleMessage::ServerConfig(mumble::ServerConfig::decode(payload)?)),
         25 => Ok(MumbleMessage::SuggestConfig(mumble::SuggestConfig::decode(payload)?)),
-        _ => Err(SasayakuError::InvalidMessageId),
+        _ => Err(RumbleError::InvalidMessageId),
     }
 }
 

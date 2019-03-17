@@ -9,7 +9,7 @@ use native_tls::TlsConnector;
 use native_tls::TlsStream;
 
 use crate::message::{self, MumbleMessage};
-use crate::sasayaku_error::SasayakuError;
+use crate::rumble_error::RumbleError;
 use crate::logger;
 
 pub struct Network {
@@ -52,7 +52,7 @@ impl Network {
         }
     }
 
-    pub fn send(&mut self, mumble_message: MumbleMessage) -> Result<(), SasayakuError> {
+    pub fn send(&mut self, mumble_message: MumbleMessage) -> Result<(), RumbleError> {
         logger::send(&mumble_message);
         let bytes = message::to_bytes(mumble_message);
         let mut tls_stream = self.tls_stream.lock();
@@ -64,7 +64,7 @@ impl Network {
         Ok(())
     }
 
-    pub fn recv_one(&mut self) -> Result<MumbleMessage, SasayakuError> {
+    pub fn recv_one(&mut self) -> Result<MumbleMessage, RumbleError> {
         let mut buffer = self.buffer.lock();
         let buffer = buffer.as_mut().unwrap();
 
@@ -79,13 +79,13 @@ impl Network {
             return Ok(message::from_bytes(message_bytes)?);
         }
 
-        Err(SasayakuError::NotEnoughBytesToDecode)
+        Err(RumbleError::NotEnoughBytesToDecode)
     }
 }
 
-fn get_message_length_in_buffer(buffer: &MutexGuard<VecDeque<u8>>) -> Result<usize, SasayakuError> {
+fn get_message_length_in_buffer(buffer: &MutexGuard<VecDeque<u8>>) -> Result<usize, RumbleError> {
     if buffer.len() < 6 {
-        return Err(SasayakuError::NotEnoughBytesToDecode);
+        return Err(RumbleError::NotEnoughBytesToDecode);
     }
 
     let mut message_length = 0usize;

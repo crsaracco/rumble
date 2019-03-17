@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum SasayakuError {
+pub enum RumbleError {
     IoError(std::io::Error),
     ProstEncodeError(prost::EncodeError),
     ProstDecodeError(prost::DecodeError),
@@ -7,20 +7,20 @@ pub enum SasayakuError {
     NotEnoughBytesToDecode,
 }
 
-impl std::convert::From<prost::EncodeError> for SasayakuError {
+impl std::convert::From<prost::EncodeError> for RumbleError {
     fn from(prost_error: prost::EncodeError) -> Self {
-        SasayakuError::ProstEncodeError(prost_error)
+        RumbleError::ProstEncodeError(prost_error)
     }
 }
 
-impl std::convert::From<prost::DecodeError> for SasayakuError {
+impl std::convert::From<prost::DecodeError> for RumbleError {
     fn from(prost_error: prost::DecodeError) -> Self {
-        SasayakuError::ProstDecodeError(prost_error)
+        RumbleError::ProstDecodeError(prost_error)
     }
 }
 
-impl std::convert::From<std::io::Error> for SasayakuError {
+impl std::convert::From<std::io::Error> for RumbleError {
     fn from(io_error: std::io::Error) -> Self {
-        SasayakuError::IoError(io_error)
+        RumbleError::IoError(io_error)
     }
 }

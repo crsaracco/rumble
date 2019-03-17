@@ -5,11 +5,11 @@ use std::thread;
 
 mod message;
 mod network;
-mod sasayaku_error;
+mod rumble_error;
 mod logger;
 
 use message::MumbleMessage;
-use sasayaku_error::SasayakuError;
+use rumble_error::RumbleError;
 
 fn main() {
     println!("Proto location: {}", concat!(env!("OUT_DIR"), "/mumble_proto.rs"));
@@ -44,7 +44,7 @@ fn main() {
 
             match message {
                 Ok(m) => logger::recv(&m),
-                Err(SasayakuError::NotEnoughBytesToDecode) => {
+                Err(RumbleError::NotEnoughBytesToDecode) => {
                     //println!("{:?}", message);
                     break;
                 }
