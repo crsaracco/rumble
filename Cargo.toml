@@ -12,6 +12,7 @@ prost-derive = "0.4.0"
 prost-types = "0.4.0"
 bytes = "0.4.11"
 crossbeam = "0.7.1"
+colored = "1.7"
 
 [build-dependencies]
 prost-build = "0.4.0"
