@@ -9,6 +9,7 @@ mod sasayaku_error;
 mod logger;
 
 use message::MumbleMessage;
+use sasayaku_error::SasayakuError;
 
 fn main() {
     println!("Proto location: {}", concat!(env!("OUT_DIR"), "/mumble_proto.rs"));
@@ -29,12 +30,6 @@ fn main() {
     authenticate_message.username = Some("testuser".into());
     let m2 = MumbleMessage::Authenticate(authenticate_message);
     messages.push(m2);
-//
-//    // Ping message
-//    let mut ping_message = message::mumble::Ping::default();
-//    let m3 = MumbleMessage::Ping(ping_message);
-//    messages.push(m3);
-
 
     let mut net = network::Network::new();
     for m in messages {
@@ -47,12 +42,16 @@ fn main() {
         loop {
             let message = net.recv_one();
 
-            if let Ok(m) = &message {
-                logger::recv(m);
-            }
-            else {
-                println!("{:?}", message);
-                break;
+            match message {
+                Ok(m) => logger::recv(&m),
+                Err(SasayakuError::NotEnoughBytesToDecode) => {
+                    //println!("{:?}", message);
+                    break;
+                }
+                Err(e) => {
+                    println!("{:?}", e);
+                }
+                _ => { }
             }
         }
 
@@ -64,7 +63,7 @@ fn main() {
         }
 
         //println!("Done receiving messages. Sleeping for 0.25 seconds.");
-        thread::sleep(Duration::new(0, 250000000))
+        thread::sleep(Duration::new(0, 100000000))
 
     }
 

@@ -6,7 +6,7 @@ use crate::sasayaku_error::SasayakuError;
 #[derive(Debug)]
 pub enum MumbleMessage {
     Version(mumble::Version),
-    UdpTunnel(mumble::UdpTunnel),
+    UdpTunnel,
     Authenticate(mumble::Authenticate),
     Ping(mumble::Ping),
     Reject(mumble::Reject),
@@ -36,7 +36,7 @@ pub enum MumbleMessage {
 pub fn to_bytes(message: MumbleMessage) -> Vec<u8> {
     match message {
         MumbleMessage::Version(m) => encode(m, 0),
-        MumbleMessage::UdpTunnel(m) => encode(m, 1),
+        MumbleMessage::UdpTunnel => vec![0, 1, 0, 0, 0, 0],
         MumbleMessage::Authenticate(m) => encode(m, 2),
         MumbleMessage::Ping(m) => encode(m, 3),
         MumbleMessage::Reject(m) => encode(m, 4),
@@ -69,7 +69,7 @@ pub fn from_bytes(bytes: Vec<u8>) -> Result<MumbleMessage, SasayakuError> {
     let payload = &bytes[6..];
     match message_id {
         0 => Ok(MumbleMessage::Version(mumble::Version::decode(payload)?)),
-        1 => Ok(MumbleMessage::UdpTunnel(mumble::UdpTunnel::decode(payload)?)),
+        1 => Ok(MumbleMessage::UdpTunnel),
         2 => Ok(MumbleMessage::Authenticate(mumble::Authenticate::decode(payload)?)),
         3 => Ok(MumbleMessage::Ping(mumble::Ping::decode(payload)?)),
         4 => Ok(MumbleMessage::Reject(mumble::Reject::decode(payload)?)),

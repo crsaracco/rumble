@@ -2,11 +2,11 @@ use colored::*;
 use crate::message::MumbleMessage;
 
 pub fn send(message: &MumbleMessage) {
-    println!("{}", format!("[SEND] {}\n", custom_debug(message)).green());
+    println!("{}", format!("[SEND] {}", custom_debug(message)).green());
 }
 
 pub fn recv(message: &MumbleMessage) {
-    println!("{}", format!("[RECV] {}\n", custom_debug(message)).red());
+    println!("{}", format!("[RECV] {}", custom_debug(message)).red());
 }
 
 pub fn custom_debug(message: &MumbleMessage) -> String {
@@ -41,7 +41,7 @@ pub fn custom_debug(message: &MumbleMessage) -> String {
 
             output
         },
-        MumbleMessage::UdpTunnel(m) => format!("UdpTunnel"),
+        MumbleMessage::UdpTunnel => format!("UdpTunnel"),
         MumbleMessage::Authenticate(m) => {
             let mut output = String::from("");
             output += "Authenticate\n";
