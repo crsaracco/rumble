@@ -1,6 +1,113 @@
-use super::*;
-use std::any::Any;
+use super::mumble;
 use prost::Message;
+use crate::sasayaku_error::SasayakuError;
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub enum MumbleMessage {
+    Version(mumble::Version),
+    UdpTunnel(mumble::UdpTunnel),
+    Authenticate(mumble::Authenticate),
+    Ping(mumble::Ping),
+    Reject(mumble::Reject),
+    ServerSync(mumble::ServerSync),
+    ChannelRemove(mumble::ChannelRemove),
+    ChannelState(mumble::ChannelState),
+    UserRemove(mumble::UserRemove),
+    UserState(mumble::UserState),
+    BanList(mumble::BanList),
+    TextMessage(mumble::TextMessage),
+    PermissionDenied(mumble::PermissionDenied),
+    Acl(mumble::Acl),
+    QueryUsers(mumble::QueryUsers),
+    CryptSetup(mumble::CryptSetup),
+    ContextActionModify(mumble::ContextActionModify),
+    ContextAction(mumble::ContextAction),
+    UserList(mumble::UserList),
+    VoiceTarget(mumble::VoiceTarget),
+    PermissionQuery(mumble::PermissionQuery),
+    CodecVersion(mumble::CodecVersion),
+    UserStats(mumble::UserStats),
+    RequestBlob(mumble::RequestBlob),
+    ServerConfig(mumble::ServerConfig),
+    SuggestConfig(mumble::SuggestConfig),
+}
+
+pub fn to_bytes(message: MumbleMessage) -> Vec<u8> {
+    match message {
+        MumbleMessage::Version(m) => encode(m, 0),
+        MumbleMessage::UdpTunnel(m) => encode(m, 1),
+        MumbleMessage::Authenticate(m) => encode(m, 2),
+        MumbleMessage::Ping(m) => encode(m, 3),
+        MumbleMessage::Reject(m) => encode(m, 4),
+        MumbleMessage::ServerSync(m) => encode(m, 5),
+        MumbleMessage::ChannelRemove(m) => encode(m, 6),
+        MumbleMessage::ChannelState(m) => encode(m, 7),
+        MumbleMessage::UserRemove(m) => encode(m, 8),
+        MumbleMessage::UserState(m) => encode(m, 9),
+        MumbleMessage::BanList(m) => encode(m, 10),
+        MumbleMessage::TextMessage(m) => encode(m, 11),
+        MumbleMessage::PermissionDenied(m) => encode(m, 12),
+        MumbleMessage::Acl(m) => encode(m, 13),
+        MumbleMessage::QueryUsers(m) => encode(m, 14),
+        MumbleMessage::CryptSetup(m) => encode(m, 15),
+        MumbleMessage::ContextActionModify(m) => encode(m, 16),
+        MumbleMessage::ContextAction(m) => encode(m, 17),
+        MumbleMessage::UserList(m) => encode(m, 18),
+        MumbleMessage::VoiceTarget(m) => encode(m, 19),
+        MumbleMessage::PermissionQuery(m) => encode(m, 20),
+        MumbleMessage::CodecVersion(m) => encode(m, 21),
+        MumbleMessage::UserStats(m) => encode(m, 22),
+        MumbleMessage::RequestBlob(m) => encode(m, 23),
+        MumbleMessage::ServerConfig(m) => encode(m, 24),
+        MumbleMessage::SuggestConfig(m) => encode(m, 25),
+    }
+}
+
+pub fn from_bytes(bytes: Vec<u8>) -> Result<MumbleMessage, SasayakuError> {
+    let message_id = bytes[1];
+    let payload = &bytes[6..];
+    match message_id {
+        0 => Ok(MumbleMessage::Version(mumble::Version::decode(payload)?)),
+        1 => Ok(MumbleMessage::UdpTunnel(mumble::UdpTunnel::decode(payload)?)),
+        2 => Ok(MumbleMessage::Authenticate(mumble::Authenticate::decode(payload)?)),
+        3 => Ok(MumbleMessage::Ping(mumble::Ping::decode(payload)?)),
+        4 => Ok(MumbleMessage::Reject(mumble::Reject::decode(payload)?)),
+        5 => Ok(MumbleMessage::ServerSync(mumble::ServerSync::decode(payload)?)),
+        6 => Ok(MumbleMessage::ChannelRemove(mumble::ChannelRemove::decode(payload)?)),
+        7 => Ok(MumbleMessage::ChannelState(mumble::ChannelState::decode(payload)?)),
+        8 => Ok(MumbleMessage::UserRemove(mumble::UserRemove::decode(payload)?)),
+        9 => Ok(MumbleMessage::UserState(mumble::UserState::decode(payload)?)),
+        10 => Ok(MumbleMessage::BanList(mumble::BanList::decode(payload)?)),
+        11 => Ok(MumbleMessage::TextMessage(mumble::TextMessage::decode(payload)?)),
+        12 => Ok(MumbleMessage::PermissionDenied(mumble::PermissionDenied::decode(payload)?)),
+        13 => Ok(MumbleMessage::Acl(mumble::Acl::decode(payload)?)),
+        14 => Ok(MumbleMessage::QueryUsers(mumble::QueryUsers::decode(payload)?)),
+        15 => Ok(MumbleMessage::CryptSetup(mumble::CryptSetup::decode(payload)?)),
+        16 => Ok(MumbleMessage::ContextActionModify(mumble::ContextActionModify::decode(payload)?)),
+        17 => Ok(MumbleMessage::ContextAction(mumble::ContextAction::decode(payload)?)),
+        18 => Ok(MumbleMessage::UserList(mumble::UserList::decode(payload)?)),
+        19 => Ok(MumbleMessage::VoiceTarget(mumble::VoiceTarget::decode(payload)?)),
+        20 => Ok(MumbleMessage::PermissionQuery(mumble::PermissionQuery::decode(payload)?)),
+        21 => Ok(MumbleMessage::CodecVersion(mumble::CodecVersion::decode(payload)?)),
+        22 => Ok(MumbleMessage::UserStats(mumble::UserStats::decode(payload)?)),
+        23 => Ok(MumbleMessage::RequestBlob(mumble::RequestBlob::decode(payload)?)),
+        24 => Ok(MumbleMessage::ServerConfig(mumble::ServerConfig::decode(payload)?)),
+        25 => Ok(MumbleMessage::SuggestConfig(mumble::SuggestConfig::decode(payload)?)),
+        _ => Err(SasayakuError::InvalidMessageId),
+    }
+}
+
+fn encode<T: prost::Message>(mumble_message: T, id: u8) -> Vec<u8>{
+    let mut protobuf_payload = vec![];
+    mumble_message.encode(&mut protobuf_payload);
+
+    let mut output_buffer = vec![0x00, id];
+    output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
+    output_buffer.append(&mut protobuf_payload);
+
+    output_buffer
+}
 
 fn protobuf_payload_length_bytes(protobuf_payload: &Vec<u8>) -> Vec<u8> {
     let mut length = vec![0u8; 4];
@@ -10,597 +117,4 @@ fn protobuf_payload_length_bytes(protobuf_payload: &Vec<u8>) -> Vec<u8> {
     length[3] = ((protobuf_payload.len() >> (8 * 0)) & 0xff) as u8;
 
     length
-}
-
-
-pub trait MumbleMessage: prost::Message {
-    fn mumble_message_id(&self) -> u8;
-
-    // Unfortunately this can't have a default implementation;
-    // it has to be implemented for each type separately.
-    // If you try to define it here (with a Sized marker), you get:
-    // "the `as_any` method cannot be invoked on a trait object"
-    // TODO: fix this?
-    fn as_any(&self) -> &dyn Any;
-
-    // Unfortunately this can't have a default implementation;
-    // it has to be implemented for each type separately.
-    // If you try to define it here (with a Sized marker), you get:
-    // "the `to_bytes` method cannot be invoked on a trait object"
-    // TODO: fix this?
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError>;
-}
-
-// Bunch of `impl`s. Pretty hacky, but it works.
-
-// Message ID 0
-impl MumbleMessage for mumble::Version {
-    fn mumble_message_id(&self) -> u8 {
-        0
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 1
-impl MumbleMessage for mumble::UdpTunnel {
-    fn mumble_message_id(&self) -> u8 {
-        1
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 2
-impl MumbleMessage for mumble::Authenticate {
-    fn mumble_message_id(&self) -> u8 {
-        2
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 3
-impl MumbleMessage for mumble::Ping {
-    fn mumble_message_id(&self) -> u8 {
-        3
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 4
-impl MumbleMessage for mumble::Reject {
-    fn mumble_message_id(&self) -> u8 {
-        4
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 5
-impl MumbleMessage for mumble::ServerSync {
-    fn mumble_message_id(&self) -> u8 {
-        5
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 6
-impl MumbleMessage for mumble::ChannelRemove {
-    fn mumble_message_id(&self) -> u8 {
-        6
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 7
-impl MumbleMessage for mumble::ChannelState {
-    fn mumble_message_id(&self) -> u8 {
-        7
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 8
-impl MumbleMessage for mumble::UserRemove {
-    fn mumble_message_id(&self) -> u8 {
-        8
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 9
-impl MumbleMessage for mumble::UserState {
-    fn mumble_message_id(&self) -> u8 {
-        9
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 10
-impl MumbleMessage for mumble::BanList {
-    fn mumble_message_id(&self) -> u8 {
-        10
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 11
-impl MumbleMessage for mumble::TextMessage {
-    fn mumble_message_id(&self) -> u8 {
-        11
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 12
-impl MumbleMessage for mumble::PermissionDenied {
-    fn mumble_message_id(&self) -> u8 {
-        12
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 13
-impl MumbleMessage for mumble::Acl {
-    fn mumble_message_id(&self) -> u8 {
-        13
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 14
-impl MumbleMessage for mumble::QueryUsers {
-    fn mumble_message_id(&self) -> u8 {
-        14
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 15
-impl MumbleMessage for mumble::CryptSetup {
-    fn mumble_message_id(&self) -> u8 {
-        15
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 16
-impl MumbleMessage for mumble::ContextActionModify {
-    fn mumble_message_id(&self) -> u8 {
-        16
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 17
-impl MumbleMessage for mumble::ContextAction {
-    fn mumble_message_id(&self) -> u8 {
-        17
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 18
-impl MumbleMessage for mumble::UserList {
-    fn mumble_message_id(&self) -> u8 {
-        18
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 19
-impl MumbleMessage for mumble::VoiceTarget {
-    fn mumble_message_id(&self) -> u8 {
-        19
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload: Vec<u8> = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer: Vec<u8> = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 20
-impl MumbleMessage for mumble::PermissionQuery {
-    fn mumble_message_id(&self) -> u8 {
-        20
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 21
-impl MumbleMessage for mumble::CodecVersion {
-    fn mumble_message_id(&self) -> u8 {
-        21
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 22
-impl MumbleMessage for mumble::UserStats {
-    fn mumble_message_id(&self) -> u8 {
-        22
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 23
-impl MumbleMessage for mumble::RequestBlob {
-    fn mumble_message_id(&self) -> u8 {
-        23
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 24
-impl MumbleMessage for mumble::ServerConfig {
-    fn mumble_message_id(&self) -> u8 {
-        24
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
-}
-
-// Message ID 25
-impl MumbleMessage for mumble::SuggestConfig {
-    fn mumble_message_id(&self) -> u8 {
-        25
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn to_bytes(&self) -> Result<Vec<u8>, prost::EncodeError> {
-        let mut protobuf_payload = vec![];
-        self.encode(&mut protobuf_payload)?;
-
-        let mut output_buffer = vec![0x00, self.mumble_message_id()];
-        output_buffer.append(&mut protobuf_payload_length_bytes(&protobuf_payload));
-        output_buffer.append(&mut protobuf_payload);
-
-        Ok(output_buffer)
-    }
 }

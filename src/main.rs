@@ -1,60 +1,71 @@
-extern crate bytes;
-extern crate native_tls;
-extern crate prost;
-#[macro_use]
-extern crate prost_derive;
-extern crate crossbeam;
+#[macro_use] extern crate prost_derive;
+
+use std::time::{Instant, Duration};
+use std::thread;
 
 mod message;
 mod network;
+mod sasayaku_error;
+mod logger;
 
 use message::MumbleMessage;
 
 fn main() {
-    /*
     println!("Proto location: {}", concat!(env!("OUT_DIR"), "/mumble_proto.rs"));
-    */
+
+    let mut messages = vec![];
+
+    // Version message
+    let mut version_message = message::mumble::Version::default();
+    version_message.version = Some(0x00010300);
+    version_message.os = Some("X11".into());
+    version_message.os_version = Some("Arch Linux".into());
+    version_message.release = Some("Sasayaku 0.1.0".into());
+    let m1 = MumbleMessage::Version(version_message);
+    messages.push(m1);
+
+    // Authenticate message
+    let mut authenticate_message = message::mumble::Authenticate::default();
+    authenticate_message.username = Some("testuser".into());
+    let m2 = MumbleMessage::Authenticate(authenticate_message);
+    messages.push(m2);
+//
+//    // Ping message
+//    let mut ping_message = message::mumble::Ping::default();
+//    let m3 = MumbleMessage::Ping(ping_message);
+//    messages.push(m3);
+
 
     let mut net = network::Network::new();
-
-
-    let mut messages: Vec<Box<MumbleMessage>> = vec![];
-
-    let mut version_message = message::Version::default();
-    version_message.version = Some(0x00010300);
-    messages.push(Box::new(version_message));
-
-    let mut authenticate_message = message::Authenticate::default();
-    authenticate_message.username = Some("someuser".into());
-    messages.push(Box::new(authenticate_message));
-
-    let mut ping_message = message::Ping::default();
-    messages.push(Box::new(ping_message));
-
-    for message in messages {
-        net.send(message);
+    for m in messages {
+        net.send(m);
     }
 
-    // Ignore this stuff:
-    /*
-    let mut net = old_network::Network::new();
-
-    let mut version_message = old_network::mumble::Version::default();
-    version_message.version = Some(0x00010300);
-    version_message.release = Some("sasayaku 0.1.0".to_string());
-    version_message.os = Some("X11".to_string());
-    version_message.os_version = Some("Arch Linux".to_string());
-    net.send(version_message).unwrap();
-
-    let mut authenticate_message = old_network::mumble::Authenticate::default();
-    authenticate_message.username = Some("testuser".to_string());
-    net.send(authenticate_message).unwrap();
+    let mut ping_instant = Instant::now();
 
     loop {
-        let messages = net.recv();
-        for message in messages {
-            println!("{:?}", message);
+        loop {
+            let message = net.recv_one();
+
+            if let Ok(m) = &message {
+                logger::recv(m);
+            }
+            else {
+                println!("{:?}", message);
+                break;
+            }
         }
+
+        if ping_instant.elapsed() > Duration::new(10, 0) {
+            let ping_message = message::mumble::Ping::default();
+            let ping_message = MumbleMessage::Ping(ping_message);
+            net.send(ping_message);
+            ping_instant = Instant::now();
+        }
+
+        //println!("Done receiving messages. Sleeping for 0.25 seconds.");
+        thread::sleep(Duration::new(0, 250000000))
+
     }
-    */
+
 }
